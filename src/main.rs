@@ -84,7 +84,7 @@ mod tests {
                               "time": "2017-08-09T14:31:18.3150000Z",
                               "asset_id_base": "BTC",
                               "asset_id_quote": "USD",
-                              "rate": 3260.3514321215056208129867667
+                              "rate": 26627.400434529947
                           }"#,
                 "application/json",
             ))
@@ -102,6 +102,6 @@ mod tests {
 
         assert_eq!(data.asset_id_quote, "USD");
         assert_eq!(data.asset_id_base, "BTC");
-        assert_eq!(data.rate, 3260.3514321215056208129867667);
+        assert_eq!(data.rate, 26627.400434529947);
     }
 }
