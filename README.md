@@ -19,4 +19,16 @@ Once you have an API key you can run:
 ./target/release/cryptgetp fetch --crypto BTC --fiat USD --key <your-key-here>
 ```
 
-You get 100 free calls per day with your API key. More information about the API can be found [here](https://www.coinapi.io).
+You get 100 free calls per day with your API key. More info about the API can be found [here](https://www.coinapi.io).
+
+For more info about the CLI tool, run:
+
+```bash
+./target/release/cryptgetp help
+```
+
+or
+
+```bash
+./target/release/cryptgetp help fetch
+```

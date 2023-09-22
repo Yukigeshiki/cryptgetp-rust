@@ -1,7 +1,5 @@
-#![allow(unused)]
-
 use clap::{Parser, Subcommand};
-use colored::{ColoredString, Colorize};
+use colored::Colorize;
 use reqwest::Client;
 
 const COIN_API_URL: &str = "https://rest.coinapi.io/v1/exchangerate";
@@ -12,15 +10,15 @@ const COIN_API_URL: &str = "https://rest.coinapi.io/v1/exchangerate";
 /// A just for fun CLI tool to fetch cryptocurrency prices written in Rust
 struct Args {
     #[command(subcommand)]
-    cmd: Command,
+    cmd: Cmd,
 }
 
 #[derive(Subcommand)]
-enum Command {
+enum Cmd {
     /// Fetches the price of a given cryptocurrency (--crypto) returned in a given fiat currency (--fiat)
     Fetch {
         #[arg(short, long)]
-        /// The cryptocurrency to fetch
+        /// The cryptocurrency you want to fetch the price for
         crypto: String,
 
         #[arg(short, long)]
@@ -36,19 +34,15 @@ enum Command {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-
     match args.cmd {
-        Command::Fetch { crypto, fiat, key } => {
-            let url = format!("{}/{}/{}", COIN_API_URL, crypto, fiat);
-            let client = Client::new();
-
-            match get_data(client, url, key).await {
+        Cmd::Fetch { crypto, fiat, key } => {
+            let url = format!("{COIN_API_URL}/{crypto}/{fiat}");
+            match get_data(Client::new(), url, key).await {
                 Ok(data) => {
                     let s = format!(
                         "\nAt the time {} the price of {} in {} was {}\n",
                         data.time, data.asset_id_base, data.asset_id_quote, data.rate
                     );
-
                     println!("{}", s.bright_cyan());
                 }
                 Err(e) => eprintln!("\n{}\n", e.to_string().bright_red()),
@@ -64,7 +58,6 @@ async fn get_data(client: Client, url: String, key: String) -> Result<CoinApiDat
         .send()
         .await
         .map_err(|_| Error::CoinApi)?;
-    // check status first
     let status = res.status();
     if !status.is_success() {
         Err(Error::Response(status.as_u16()))?;
@@ -86,7 +79,7 @@ enum Error {
     #[error("Error fetching data from Coin API")]
     CoinApi,
 
-    #[error("Response from Coin API returned error code: {0}")]
+    #[error("Response from Coin API returned HTTP code: {0}")]
     Response(u16),
 }
 
@@ -94,7 +87,7 @@ enum Error {
 mod tests {
     use super::get_data;
     use reqwest::Client;
-    use wiremock::matchers::{any, method, path, query_param};
+    use wiremock::matchers::{any, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[tokio::test]
