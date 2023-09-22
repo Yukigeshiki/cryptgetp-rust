@@ -1,43 +1,59 @@
 #![allow(unused)]
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use colored::{ColoredString, Colorize};
 use reqwest::Client;
 
 const COIN_API_URL: &str = "https://rest.coinapi.io/v1/exchangerate";
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version)]
+#[command(propagate_version = true)]
+/// A just for fun CLI tool to fetch cryptocurrency prices written in Rust
 struct Args {
-    /// The cryptocurrency to fetch
-    #[arg(short, long)]
-    crypto: String,
+    #[command(subcommand)]
+    cmd: Command,
+}
 
-    /// The fiat currency the price will be returned in
-    #[arg(short, long)]
-    fiat: String,
+#[derive(Subcommand)]
+enum Command {
+    /// Fetches the price of a given cryptocurrency (--crypto) returned in a given fiat currency (--fiat)
+    Fetch {
+        #[arg(short, long)]
+        /// The cryptocurrency to fetch
+        crypto: String,
 
-    /// The API key from https://www.coinapi.io/pricing?apikey
-    #[arg(short, long)]
-    key: String,
+        #[arg(short, long)]
+        /// The fiat currency the price will be returned in
+        fiat: String,
+
+        #[arg(short, long)]
+        /// The API key from https://www.coinapi.io/pricing?apikey
+        key: String,
+    },
 }
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    let url = format!("{}/{}/{}", COIN_API_URL, args.crypto, args.fiat);
 
-    let client = Client::new();
-    match get_data(client, url, args.key).await {
-        Ok(data) => {
-            let s = format!(
-                "\nAt the time {} the price of {} in {} was {}\n",
-                data.time, data.asset_id_base, data.asset_id_quote, data.rate
-            );
+    match args.cmd {
+        Command::Fetch { crypto, fiat, key } => {
+            let url = format!("{}/{}/{}", COIN_API_URL, crypto, fiat);
+            let client = Client::new();
 
-            println!("{}", s.bright_cyan());
+            match get_data(client, url, key).await {
+                Ok(data) => {
+                    let s = format!(
+                        "\nAt the time {} the price of {} in {} was {}\n",
+                        data.time, data.asset_id_base, data.asset_id_quote, data.rate
+                    );
+
+                    println!("{}", s.bright_cyan());
+                }
+                Err(e) => eprintln!("\n{}\n", e.to_string().bright_red()),
+            }
         }
-        Err(e) => eprintln!("\n{}\n", e.to_string().bright_red()),
     }
 }
 
@@ -51,7 +67,7 @@ async fn get_data(client: Client, url: String, key: String) -> Result<CoinApiDat
     // check status first
     let status = res.status();
     if !status.is_success() {
-        Err(Error::ApiResponse(status.as_u16()))?;
+        Err(Error::Response(status.as_u16()))?;
     }
     let text = res.text().await.map_err(|_| Error::CoinApi)?;
     serde_json::from_str(&text).map_err(|_| Error::CoinApi)
@@ -67,11 +83,11 @@ struct CoinApiData {
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
-    #[error("Response from Coin API returned error code: {0}")]
-    ApiResponse(u16),
-
     #[error("Error fetching data from Coin API")]
     CoinApi,
+
+    #[error("Response from Coin API returned error code: {0}")]
+    Response(u16),
 }
 
 #[cfg(test)]
@@ -90,11 +106,11 @@ mod tests {
             .and(method("GET"))
             .respond_with(ResponseTemplate::new(200).set_body_raw(
                 r#"{
-                              "time": "2017-08-09T14:31:18.3150000Z",
-                              "asset_id_base": "BTC",
-                              "asset_id_quote": "USD",
-                              "rate": 26627.400434529947
-                          }"#,
+                    "time": "2017-08-09T14:31:18.3150000Z",
+                    "asset_id_base": "BTC",
+                    "asset_id_quote": "USD",
+                    "rate": 26627.400434529947
+                }"#,
                 "application/json",
             ))
             .expect(1)
