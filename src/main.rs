@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use clap::Parser;
-use colored::Colorize;
+use colored::{ColoredString, Colorize};
 use reqwest::Client;
 
 const COIN_API_URL: &str = "https://rest.coinapi.io/v1/exchangerate";
@@ -14,22 +14,22 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), String> {
+async fn main() {
     let args = Cli::parse();
     let url = format!("{}/{}/{}", COIN_API_URL, args.crypto, args.fiat);
 
     let client = Client::new();
-    let data = get_data(client, url, args.key)
-        .await
-        .map_err(|e| e.to_string())?;
-    let s = format!(
-        "\nAt the time {} the price of {} in {} was {}\n",
-        data.time, data.asset_id_quote, data.asset_id_base, data.rate
-    );
+    match get_data(client, url, args.key).await {
+        Ok(data) => {
+            let s = format!(
+                "\nAt the time {} the price of {} in {} was {}\n",
+                data.time, data.asset_id_quote, data.asset_id_base, data.rate
+            );
 
-    println!("{}", s.bright_cyan());
-
-    Ok(())
+            println!("{}", s.bright_cyan());
+        }
+        Err(e) => eprintln!("\n{}\n", e.to_string().bright_red()),
+    }
 }
 
 async fn get_data(client: Client, url: String, key: String) -> Result<CoinApiData, Error> {
