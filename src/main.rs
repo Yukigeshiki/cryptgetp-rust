@@ -7,15 +7,24 @@ use reqwest::Client;
 const COIN_API_URL: &str = "https://rest.coinapi.io/v1/exchangerate";
 
 #[derive(Parser)]
-struct Cli {
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// The cryptocurrency to fetch
+    #[arg(short, long)]
     crypto: String,
+
+    /// The fiat currency the price will be returned in
+    #[arg(short, long)]
     fiat: String,
+
+    /// The API key from https://www.coinapi.io/pricing?apikey
+    #[arg(short, long)]
     key: String,
 }
 
 #[tokio::main]
 async fn main() {
-    let args = Cli::parse();
+    let args = Args::parse();
     let url = format!("{}/{}/{}", COIN_API_URL, args.crypto, args.fiat);
 
     let client = Client::new();
