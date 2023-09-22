@@ -32,7 +32,7 @@ async fn main() {
         Ok(data) => {
             let s = format!(
                 "\nAt the time {} the price of {} in {} was {}\n",
-                data.time, data.asset_id_quote, data.asset_id_base, data.rate
+                data.time, data.asset_id_base, data.asset_id_quote, data.rate
             );
 
             println!("{}", s.bright_cyan());

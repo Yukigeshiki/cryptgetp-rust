@@ -16,15 +16,7 @@ The pricing data is fetched from coinapi.io, so you'll need to get a free API ke
 Once you have an API key you can run:
 
 ```bash
-./target/release/cryptgetp -- BTC USD <your-key-here>
+./target/release/cryptgetp --crypto BTC --fiat USD --key <your-key-here>
 ```
-
-You can also run:
-
-```bash
-cargo run --release -- BTC USD <your-key-here>
-```
-
-if you'd prefer not to build the application first.
 
 You get 100 free calls per day with your API key. More information about the API can be found [here](https://www.coinapi.io).
