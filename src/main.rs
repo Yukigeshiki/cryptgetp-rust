@@ -64,3 +64,44 @@ enum Error {
     #[error("Error fetching data from Coin API")]
     CoinApi,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::get_data;
+    use reqwest::Client;
+    use wiremock::matchers::{any, method, path, query_param};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_get_data() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(any())
+            .and(path("/BTC/USD"))
+            .and(method("GET"))
+            .respond_with(ResponseTemplate::new(200).set_body_raw(
+                r#"{
+                              "time": "2017-08-09T14:31:18.3150000Z",
+                              "asset_id_base": "BTC",
+                              "asset_id_quote": "USD",
+                              "rate": 3260.3514321215056208129867667
+                          }"#,
+                "application/json",
+            ))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        let data = get_data(
+            Client::new(),
+            format!("{}/{}", mock_server.uri(), "BTC/USD"),
+            "key".to_string(),
+        )
+        .await
+        .expect("Failed to get data");
+
+        assert_eq!(data.asset_id_quote, "USD");
+        assert_eq!(data.asset_id_base, "BTC");
+        assert_eq!(data.rate, 3260.3514321215056208129867667);
+    }
+}
