@@ -86,7 +86,7 @@ enum Error {
     #[error("Error fetching data from Coin API")]
     CoinApi,
 
-    #[error("Response from Coin API returned HTTP code: {0}")]
+    #[error("Response from Coin API returned HTTP error code: {0}")]
     Response(u16),
 }
 
@@ -100,9 +100,12 @@ mod tests {
     #[tokio::test]
     async fn test_get_data() {
         let mock_server = MockServer::start().await;
+        let crypto = "BTC";
+        let fiat = "USD";
+        let p = format!("{crypto}/{fiat}");
 
         Mock::given(any())
-            .and(path("/BTC/USD"))
+            .and(path("/".to_owned() + &p))
             .and(method("GET"))
             .respond_with(ResponseTemplate::new(200).set_body_raw(
                 r#"{
@@ -119,14 +122,14 @@ mod tests {
 
         let data = get_data(
             Client::new(),
-            format!("{}/{}", mock_server.uri(), "BTC/USD"),
+            format!("{}/{}", mock_server.uri(), p),
             "key".to_string(),
         )
         .await
         .expect("Failed to get data");
 
-        assert_eq!(data.asset_id_quote, "USD");
-        assert_eq!(data.asset_id_base, "BTC");
+        assert_eq!(data.asset_id_base, crypto);
+        assert_eq!(data.asset_id_quote, fiat);
         assert_eq!(data.rate, 26627.400434529947);
     }
 }
