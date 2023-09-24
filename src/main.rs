@@ -47,12 +47,12 @@ async fn main() {
             match get_data(Client::new(), url, key).await {
                 Ok(data) => {
                     let s = format!(
-                        "\nAt the time {} the price of {} in {} was {}\n",
+                        "At the time {} the price of {} in {} was {}",
                         data.time, data.asset_id_base, data.asset_id_quote, data.rate
                     );
                     println!("{}", s.bright_cyan());
                 }
-                Err(e) => eprintln!("\n{}\n", e.to_string().bright_red()),
+                Err(e) => eprintln!("{} {e}", "error:".to_string().bright_red()),
             }
         }
     }
@@ -73,7 +73,7 @@ async fn get_data(client: Client, url: String, key: String) -> Result<CoinApiDat
     serde_json::from_str(&text).map_err(|_| Error::CoinApi)
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize)]
 struct CoinApiData {
     time: String,
     asset_id_base: String,
@@ -83,10 +83,10 @@ struct CoinApiData {
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
-    #[error("Error fetching data from Coin API")]
+    #[error("error fetching data from Coin API")]
     CoinApi,
 
-    #[error("Response from Coin API returned HTTP error code: {0}")]
+    #[error("response from Coin API returned HTTP error code: {0}")]
     Response(u16),
 }
 
