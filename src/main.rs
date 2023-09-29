@@ -39,7 +39,7 @@ async fn main() {
     match args.cmd {
         Cmd::Fetch { crypto, fiat, key } => {
             let url = format!("{COIN_API_URL}/{crypto}/{fiat}");
-            match get_data(Client::new(), url, key).await {
+            match get_data(&Client::new(), url, key).await {
                 Ok(data) => {
                     let s = format!(
                         "At the time {} the price of {} in {} was {}",
@@ -53,7 +53,7 @@ async fn main() {
     }
 }
 
-async fn get_data(client: Client, url: String, key: String) -> Result<CoinApiData, Error> {
+async fn get_data(client: &Client, url: String, key: String) -> Result<CoinApiData, Error> {
     let res = client
         .get(url)
         .header("X-CoinAPI-Key", key)
@@ -78,7 +78,7 @@ struct CoinApiData {
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
-    #[error("error fetching data from Coin API")]
+    #[error("error fetching data from Coin API. Please try again later")]
     CoinApi,
 
     #[error("response from Coin API returned HTTP error code: {0}")]
@@ -116,7 +116,7 @@ mod tests {
             .await;
 
         let data = get_data(
-            Client::new(),
+            &Client::new(),
             format!("{}/{}", mock_server.uri(), p),
             "key".to_string(),
         )
