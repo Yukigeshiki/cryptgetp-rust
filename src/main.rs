@@ -39,7 +39,7 @@ async fn main() {
     match args.cmd {
         Cmd::Fetch { crypto, fiat, key } => {
             let url = format!("{COIN_API_URL}/{crypto}/{fiat}");
-            match get_data(&Client::new(), url, key).await {
+            match get_data(&Client::new(), &url, &key).await {
                 Ok(data) => {
                     let s = format!(
                         "At the time {} the price of {} in {} was {}",
@@ -53,7 +53,7 @@ async fn main() {
     }
 }
 
-async fn get_data(client: &Client, url: String, key: String) -> Result<CoinApiData, Error> {
+async fn get_data(client: &Client, url: &str, key: &str) -> Result<CoinApiData, Error> {
     let res = client
         .get(url)
         .header("X-CoinAPI-Key", key)
@@ -117,8 +117,8 @@ mod tests {
 
         let data = get_data(
             &Client::new(),
-            format!("{}/{}", mock_server.uri(), p),
-            "key".to_string(),
+            &format!("{}/{}", mock_server.uri(), p),
+            "key",
         )
         .await
         .expect("Failed to get data");
