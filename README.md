@@ -1,4 +1,7 @@
 # cryptgetp-rust
+
+[![build](https://github.com/Yukigeshiki/cryptgetp-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/Yukigeshiki/cryptgetp-rust/actions/workflows/ci.yml)
+
 Crypt-Get-P - a just for fun CLI tool to fetch cryptocurrency prices written in Rust.
 
 ### How to run:
