@@ -39,7 +39,7 @@ async fn main() {
     match args.cmd {
         Cmd::Fetch { crypto, fiat, key } => {
             let url = format!("{COIN_API_URL}/{crypto}/{fiat}");
-            match get_data(&Client::new(), &url, &key).await {
+            match CoinApiData::get_data(&Client::new(), &url, &key).await {
                 Ok(data) => {
                     let s = format!(
                         "At the time {} the price of {} in {} was {}",
@@ -53,27 +53,29 @@ async fn main() {
     }
 }
 
-async fn get_data(client: &Client, url: &str, key: &str) -> Result<CoinApiData, Error> {
-    let res = client
-        .get(url)
-        .header("X-CoinAPI-Key", key)
-        .send()
-        .await
-        .map_err(|_| Error::CoinApi)?;
-    let status = res.status();
-    if !status.is_success() {
-        Err(Error::Response(status.as_u16()))?;
-    }
-    let text = res.text().await.map_err(|_| Error::CoinApi)?;
-    serde_json::from_str(&text).map_err(|_| Error::CoinApi)
-}
-
 #[derive(serde::Deserialize)]
 struct CoinApiData {
     time: String,
     asset_id_base: String,
     asset_id_quote: String,
     rate: f64,
+}
+
+impl CoinApiData {
+    async fn get_data(client: &Client, url: &str, key: &str) -> Result<Self, Error> {
+        let res = client
+            .get(url)
+            .header("X-CoinAPI-Key", key)
+            .send()
+            .await
+            .map_err(|_| Error::CoinApi)?;
+        let status = res.status();
+        if !status.is_success() {
+            Err(Error::Response(status.as_u16()))?;
+        }
+        let text = res.text().await.map_err(|_| Error::CoinApi)?;
+        serde_json::from_str(&text).map_err(|_| Error::CoinApi)
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -87,7 +89,7 @@ enum Error {
 
 #[cfg(test)]
 mod tests {
-    use super::get_data;
+    use super::CoinApiData;
     use reqwest::Client;
     use wiremock::matchers::{any, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -115,7 +117,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let data = get_data(
+        let data = CoinApiData::get_data(
             &Client::new(),
             &format!("{}/{}", mock_server.uri(), p),
             "key",
